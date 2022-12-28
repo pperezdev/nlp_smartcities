@@ -1,9 +1,7 @@
-from back import Extractor
-from back import FileManagers
-ext = Extractor()
+from back import ExtractDocument
+ext_doc = ExtractDocument()
 
 url = "https://en.wikipedia.org/wiki/Smart_city"
 
-fm = FileManagers() 
-fm.write_data(ext.extract(url))
+ext_doc.write_document(url, wikipedia=True)
 
