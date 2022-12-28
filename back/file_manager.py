@@ -1,6 +1,7 @@
 import pickle
 import io
 import nltk
+import os
 
 class Result:
     def __init__(self, data:object, result:str) -> None:
@@ -9,9 +10,10 @@ class Result:
 
 class FileManagers:
     def __init__(self) -> None:
-        self.main_path = "./data/"
+        basedir = os.path.dirname(os.path.abspath(__file__))[:-7]
+        self.main_path = f"{basedir}data"
     
-    def open_file(self, fct:function, file_name:str, follow_path:str, end_file:str, *args, **kwargs) -> Result:
+    def open_file(self, fct, file_name:str, follow_path:str, end_file:str, *args, **kwargs) -> Result:
         val = "error"
         path = f"{self.main_path}/{follow_path}/{file_name}.{end_file}"
         with open(path, 'wb') as file:
@@ -37,3 +39,10 @@ class FileManagers:
         
     def save_model(self, file_name:str, classifier:nltk.NaiveBayesClassifier) -> Result:
         return self.open_file(self.__save_model, file_name, classifier, "models", "pickle")
+    
+    def get_models_name_list(self) -> None:
+        model_name = list(str)
+        path = f"{self.main_path}/models/"
+        for file in os.listdir(path):
+            if os.path.isfile(os.path.join(path, file)):
+                model_name.append(file.split('.')[0])
