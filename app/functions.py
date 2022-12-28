@@ -1,4 +1,4 @@
-from back.file_manager import FileManagers
+from back import FileManagers
 
 def get_models_name() -> list(str):
     fm = FileManagers()
