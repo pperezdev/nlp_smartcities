@@ -1,30 +1,16 @@
 import requests
-from datetime import datetime
-from bs4 import BeautifulSoup, SoupStrainer
+from bs4 import BeautifulSoup
 from tqdm import tqdm
 from bs4.element import Comment
-import uuid
-
-class Document:
-    def __init__(self, title:str=None, content:str=None, id:uuid=None, extension:str='txt') -> None:
-        self.id = id
-        if id == None:
-            self.id = uuid.uuid1()
-            
-        self.extension = extension
-        self.title = title
-        self.content = content
-        self.date = datetime.now()
-    
-    def to_dict(self) -> dict:
-        return {
-            'id':str(self.id),
-            'document': f"{self.title}.{self.extension}",
-            'date':self.date.strftime("%d-%m-%YT%H:%M:%SZ%f")
-        }
+from .result_error import Result
+import os
+from .file_manager import FileManagers
+from .document import Document
 
 class Extractor:
     def __init__(self) -> None:
+        self.fm = FileManagers()
+        self.size_min = 5000
         self.startwith_test_0 = "https"
         self.startwith_test_1 = "/wiki"
     
@@ -53,28 +39,68 @@ class Extractor:
                 link_url.append(link_raw)
         return link_url
     
-    def extract_wikipedia(self, url:str) -> list[Document]:
+    def extract_wikipedia(self, url:str) -> Result:
         documents = []
         page = requests.get(url)
         soup = BeautifulSoup(page.text, 'html.parser')
-        documents.append(self.extract(url))
+        
+        result_0 = self.extract(url)
+        if result_0.error == False:
+            documents.append(result_0.data)
+            
         link_url = self.clean_link(soup)
         
         for link in tqdm(link_url):
-            try:
-                documents.append(self.extract(link))
-            except:
-                print(f"ERROR AT: {link}")
-        
-        return documents
+            
+            result_1 = self.extract(link)
+            if result_1.error == False:
+                documents.append(result_1.data)
 
-    def extract(self, url:str) -> Document:
+        return Result(documents, False)
+
+    def download_pdf_file(self, url: str) -> Result:
+        response = requests.get(url, stream=True)
+
+        pdf_file_name = os.path.basename(url).split('.')[0]
+        if response.status_code == 200:
+            doc = Document(pdf_file_name, response.content,extension="pdf",encoding=None, type='byte')
+            self.fm.write_document(doc)
+            return Result(pdf_file_name, False)
+        else:
+            return Result(None, True)
         
-        page = requests.get(url)
-        soup = BeautifulSoup(page.text, 'html.parser')
-        title = self.clean_title(soup)
-        texts = soup.findAll(text=True)
-        visible_texts = filter(self.tag_visible, texts) 
-        content = u" ".join(t.strip() for t in visible_texts)
+    def extract_pdf(self, url:str) -> Result:
+        result = self.download_pdf_file(url)
+        if result.error == True:
+            return Result(None, True)
         
-        return Document(title,content)
+        result_2 = self.fm.read_pdf(result.data)
+        if result_2.error == True:
+            return Result(None, True)
+        
+        doc = Document(result.data, result_2.data)
+        return Result(doc, False)
+        
+    def extract(self, url: str) -> Result :        
+        if url.endswith('.pdf'):
+            return self.extract_pdf(url)
+        return self.extract_web(url)
+            
+    def extract_web(self, url:str) -> Result:
+        doc = None
+        error = True
+        try:
+            page = requests.get(url)
+            soup = BeautifulSoup(page.text, 'html.parser')
+            title = self.clean_title(soup)
+            texts = soup.findAll(text=True)
+            visible_texts = filter(self.tag_visible, texts) 
+            content = u" ".join(t.strip() for t in visible_texts)
+            
+            if len(content) > self.size_min:
+                doc = Document(title,content)
+                error = False
+        except:
+            print(f"ERROR AT: {url}")
+            
+        return Result(doc, error)

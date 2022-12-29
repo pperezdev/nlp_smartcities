@@ -5,17 +5,18 @@ class ExtractDocument:
         self.file_manager = FileManagers() 
         self.extractor = Extractor()
         
-    def extract(self, url) -> Document:
+    def extract(self, url) -> Result:
         return self.extractor.extract(url)
     
-    def extract_wikipedia(self, url) -> Document:
+    def extract_wikipedia(self, url) -> Result:
         return self.extractor.extract_wikipedia(url)
         
     def write_document(self, url:str, wikipedia:bool=False):
-        doc = Document()
         if wikipedia:
-            doc = self.extract_wikipedia(url)
-            self.file_manager.write_document_list(doc)
+            result = self.extract_wikipedia(url)
+            if result.error == False:
+                self.file_manager.write_document_list(result.data)
         else:
-            doc = self.extract(url)
-            self.file_manager.write_document(doc)
+            result = self.extract(url)
+            if result.error == False:
+                self.file_manager.write_document(result.data)

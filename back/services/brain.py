@@ -14,5 +14,10 @@ class Brain:
         classifier = nltk.NaiveBayesClassifier.train(training_set)
         print("Classifier accuracy :",(nltk.classify.accuracy(classifier, testing_set))*100)
         classifier.show_most_informative_features(15)
+        features = classifier.classify("")
         
         return classifier
+    
+    def Classifiy(classifier:nltk.NaiveBayesClassifier, text:str) -> None:
+        result = classifier.classify(text)
+        result

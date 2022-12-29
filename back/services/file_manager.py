@@ -5,48 +5,69 @@ import os
 import codecs
 import json
 import uuid
-from .extractor import Document
-
-class Result:
-    def __init__(self, data, result:str) -> None:
-        self.data = data
-        self.result = result
+from .document import Document
+from .result_error import Result
+import pypdf
 
 class FileManagers:
     def __init__(self) -> None:
         basedir = os.path.dirname(os.path.abspath(__file__))[:-13]
         self.main_path = f"{basedir}data"
     
-    def open_file(self, fct, file_name:str, follow_path:str, end_file:str, write_method:str='wb', *args, **kwargs) -> Result:
-        val = "error"
-        path = f"{self.main_path}/{follow_path}/{file_name}.{end_file}"
-        with codecs.open(path, write_method, "utf-8") as file:
-            val = fct(file, *args, **kwargs)
-        return Result(val, "")
-    
-    def __write_document(self, file:io.BufferedWriter, text:str, *args, **kwargs) -> object:
-        file.write(text)
-        return None
-    
-    def __write_document_json(self, file:io.BufferedWriter, dictionary:dict, *args, **kwargs) -> object:
-        json.dump(dictionary, file)
-        return None
-    
-    def __load_model(self, file:io.BufferedWriter, *args, **kwargs) -> object:
-        return pickle.load(file)
+    def open_file(self, fct, file_name:str, follow_path:str, end_file:str, write_method:str='wb', encoding:str=None, *args, **kwargs) -> Result:
+        val = None
+        error = True
         
-    def __save_model(self, file:io.BufferedWriter, classifier:nltk.NaiveBayesClassifier, *args, **kwargs) -> object:
+        path = f"{self.main_path}/{follow_path}/{file_name}.{end_file}"
+   
+        with codecs.open(path, write_method, encoding=encoding) as file:
+            result = fct(file, *args, **kwargs)
+            if result.error == False:
+                val = result.data
+                error = False
+            
+        return Result(val, error)
+    
+    def __write_document_byte(self, file:io.BufferedWriter, byte:bytes, *args, **kwargs) -> Result:
+        file.write(byte)
+        return Result(None, False)
+    
+    def __write_document(self, file:io.BufferedWriter, text:str, *args, **kwargs) -> Result:
+        file.write(text)
+        return Result(None, False)
+    
+    def __write_document_json(self, file:io.BufferedWriter, dictionary:dict, *args, **kwargs) -> Result:
+        json.dump(dictionary, file)
+        return Result(None, False)
+    
+    def __load_model(self, file:io.BufferedWriter, *args, **kwargs) -> Result:
+        val = pickle.load(file)
+        return Result(val, False)
+        
+    def __save_model(self, file:io.BufferedWriter, classifier:nltk.NaiveBayesClassifier, *args, **kwargs) -> Result:
         pickle.dump(classifier, file)
-        return None
+        return Result(None, False)
+    
+    def __read_pdf(self, file:io.BufferedWriter, *args, **kwargs)-> Result:
+        try:
+            pdf_reader = pypdf.PdfReader(file)
+            content = ""
+            
+            for page in pdf_reader.pages:
+                content += page.extract_text()
+            
+            return Result(content, False)
+        except:
+            return Result(None, True)
     
     def write_datanode(self, document:Document, type:str) -> Result:
         id = uuid.uuid1()
         title = f"DATANODE-{type}-{id}"
-        return self.open_file(self.__write_document_json, title, "datanodes", "json", 'w+', document.to_dict())
+        return self.open_file(self.__write_document_json, title, "datanodes", "json", 'w+', 'utf-8', document.to_dict())
     
     def write_document_list(self, documents:list[Document]) -> Result:
         result_list = []
-        result = Result(result_list, "")
+        result = Result(result_list, False)
         
         for document in documents:
             result.data.append(self.write_document(document))
@@ -55,9 +76,15 @@ class FileManagers:
     
     def write_document(self, document:Document) -> Result:
         result_list = []
-        result = Result(result_list, "")
-        result.data.append(self.open_file(self.__write_document, document.title, "datasets", document.extension, 'w+', document.content))
-        result.data.append(self.write_datanode(document, "DATA"))
+        result = Result(result_list, False)
+        fct = self.__write_document
+        if document.type == 'byte':
+            fct = self.__write_document_byte
+        
+        result_0 = self.open_file(fct, document.title, "datasets", document.extension, document.w_method, document.encoding, document.content)
+        result.data.append(result_0)
+        if result_0.error == False:
+            result.data.append(self.write_datanode(document, "DATA"))
         return result
     
     def load_model(self, file_name:str) -> Result:
@@ -66,7 +93,11 @@ class FileManagers:
     def save_model(self, file_name:str, classifier:nltk.NaiveBayesClassifier) -> Result:
         return self.open_file(self.__save_model, file_name, "models", "pickle", 'w+', classifier)
     
-    def load_Documents() -> list[Document]:
+    
+    def read_pdf(self, file_name:str) -> Result:
+        return self.open_file(self.__read_pdf, file_name, "datasets", 'pdf', 'rb')
+    
+    def read_documents() -> list[Document]:
         pass
     
     def get_models_name_list(self) -> list[str]:
