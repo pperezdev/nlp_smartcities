@@ -48,6 +48,10 @@ class FileManagers:
         pickle.dump(classifier, file)
         return Result(None, False)
     
+    def __read_document(self, file:io.BufferedWriter, *args, **kwargs)-> Result:
+        content = file.read()
+        return Result(content, False)
+        
     def __read_pdf(self, file:io.BufferedWriter, *args, **kwargs)-> Result:
         try:
             pdf_reader = pypdf.PdfReader(file)
@@ -96,6 +100,9 @@ class FileManagers:
     
     def read_pdf(self, file_name:str) -> Result:
         return self.open_file(self.__read_pdf, file_name, "datasets", 'pdf', 'rb')
+    
+    def read_document(self, file_name:str) -> Result:
+        return self.open_file(self.__read_document, file_name, "datasets", 'txt', 'r+','utf-8')
     
     def read_documents() -> list[Document]:
         pass

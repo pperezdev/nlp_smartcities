@@ -4,3 +4,6 @@ nltk
 pickle
 tqdm
 pypdf
+transformers
+pandas
+torch
