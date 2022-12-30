@@ -5,6 +5,7 @@ import os
 import codecs
 import json
 import uuid
+from werkzeug.datastructures import FileStorage
 from .document import Document
 from .result_error import Result
 import pypdf
@@ -64,6 +65,12 @@ class FileManagers:
         except:
             return Result(None, True)
     
+    def file_save(self, file:FileStorage, file_name:str) -> Result:
+        path = f"{self.main_path}/uploads/{file_name}"
+        file.save(path)
+        
+        return Result(file_name.split('.')[0], False)
+    
     def write_datanode(self, document:Document, type:str) -> Result:
         id = uuid.uuid1()
         title = f"DATANODE-{type}-{id}"
@@ -98,8 +105,8 @@ class FileManagers:
         return self.open_file(self.__save_model, file_name, "models", "pickle", 'w+', classifier)
     
     
-    def read_pdf(self, file_name:str) -> Result:
-        return self.open_file(self.__read_pdf, file_name, "datasets", 'pdf', 'rb')
+    def read_pdf(self, file_name:str, follow_path:str="datasets") -> Result:
+        return self.open_file(self.__read_pdf, file_name, follow_path, 'pdf', 'rb')
     
     def read_document(self, file_name:str) -> Result:
         return self.open_file(self.__read_document, file_name, "datasets", 'txt', 'r+','utf-8')

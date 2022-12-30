@@ -1,15 +1,19 @@
-import nltk
-import pickle
+from flask import Flask
+from flask_session import Session
+from app import default_blueprint
 
-featuresets = []
+sess = Session()
 
-dataset_count = 1900
+app = Flask(__name__)
 
-training_set = featuresets[:dataset_count]
-testing_set = featuresets[dataset_count:]
+app.register_blueprint(default_blueprint)
 
-classifier = nltk.NaiveBayesClassifier.train(training_set)
+if __name__ == "__main__":
+    
+    app.secret_key = 'super secret key'
+    app.config['SESSION_TYPE'] = 'filesystem'
+    
+    sess.init_app(app)
 
-print("Classifier accuracy :",(nltk.classify.accuracy(classifier, testing_set))*100)
-
-classifier.show_most_informative_features(15)
+    app.debug = True
+    app.run(host='0.0.0.0', port=5000)

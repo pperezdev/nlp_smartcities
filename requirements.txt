@@ -7,3 +7,5 @@ pypdf
 transformers
 pandas
 torch
+flask
+Flask-Session

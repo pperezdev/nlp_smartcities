@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>NLP - Project</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    </head>
+    <body background="{{ url_for('static', filename='images/bg.jpg') }}";>
+        <div>
+            <div class="topnav">
+                <a class="active" href="#home">Home</a>
+                <a href="#news">News</a>
+                <a href="#contact">Contact</a>
+                <a href="#about">About</a>
+            </div>
+            <div>
+                <br/>
+                <h1>ISSOUX</h1>
+                <textarea id="story" name="story"
+                        rows="5" cols="33">
+                    It was a dark and stormy night...
+                </textarea>
+                <br/>
+                <form method=post enctype=multipart/form-data>
+                    <input type=file name=file>
+                    <input type=submit value=Upload>
+                </form>
+        </div>
+    </body>
+</html>
