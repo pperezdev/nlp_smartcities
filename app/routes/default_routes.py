@@ -24,13 +24,12 @@ def index():
             return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            get_synthesis_pdf(file, filename)
-            return render_template("index.html")
+            val = get_synthesis_pdf(file, filename)
+            return render_template("index.html", test=val)
         
-    return render_template("index.html")
+    return render_template("index.html", test='')
 
-@default_blueprint.route('/execute-action', methods=['GET'])
+@default_blueprint.route('/treat-text', methods=['GET', 'POST'])
 def execute_action():
-    #data = request.json
-    val = get_models_name()
+
     return ""

@@ -30,8 +30,12 @@
     color: white;
 }
 
-.body {
+body {
     background-repeat: no-repeat;
-    background-size: contain;
+    background-size:cover;
     margin: 0px;
+}
+
+h1, h2, p {
+    color: white;
 }
